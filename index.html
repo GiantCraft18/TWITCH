@@ -5,16 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Twitch Viewer — смотри и общайся</title>
   <style>
-    /* ===== Цветовая палитра в стиле Twitch ===== */
+    /* ===== Палитра Twitch ===== */
     :root {
       --bg-main: #0e0e10;
       --bg-panel: #18181b;
       --bg-input: #1f1f23;
+      --bg-card: #1a1a1e;
       --accent: #9147ff;
       --accent-hover: #772ce8;
+      --accent-soft: rgba(145, 71, 255, 0.15);
       --text-main: #efeff1;
       --text-muted: #adadb8;
       --border: #2f2f35;
+      --border-light: #3a3a42;
+      --radius: 10px;
+      --radius-sm: 6px;
     }
 
     * {
@@ -24,18 +29,19 @@
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg-main);
       color: var(--text-main);
       min-height: 100vh;
+      line-height: 1.5;
     }
 
-    /* ===== Верхняя панель ===== */
+    /* ===== Шапка ===== */
     header {
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 12px 24px;
+      padding: 14px 28px;
       background: var(--bg-panel);
       border-bottom: 1px solid var(--border);
       position: sticky;
@@ -45,45 +51,65 @@
 
     .logo {
       font-size: 20px;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--accent);
       white-space: nowrap;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--accent);
     }
 
     .search-wrapper {
       position: relative;
       flex: 1;
-      max-width: 480px;
+      max-width: 420px;
     }
 
     .search-input {
       width: 100%;
-      padding: 10px 14px;
+      padding: 11px 16px;
       background: var(--bg-input);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       color: var(--text-main);
       font-size: 14px;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input::placeholder {
+      color: #5a5a63;
     }
 
     .search-input:focus {
       border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
     .search-results {
       position: absolute;
-      top: calc(100% + 6px);
+      top: calc(100% + 8px);
       left: 0;
       right: 0;
       background: var(--bg-panel);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      max-height: 360px;
+      border-radius: var(--radius-sm);
+      max-height: 380px;
       overflow-y: auto;
       display: none;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+      z-index: 200;
     }
 
     .search-results.visible {
@@ -94,9 +120,9 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px 14px;
+      padding: 12px 16px;
       cursor: pointer;
-      transition: background 0.12s;
+      transition: background 0.15s;
     }
 
     .search-item:hover {
@@ -104,10 +130,11 @@
     }
 
     .search-item img {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       object-fit: cover;
+      background: var(--bg-input);
     }
 
     .search-item-info {
@@ -135,12 +162,13 @@
       display: inline-block;
       background: #eb0400;
       color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
       border-radius: 3px;
       text-transform: uppercase;
-      margin-left: 6px;
+      margin-left: 8px;
+      letter-spacing: 0.5px;
     }
 
     .channel-input-row {
@@ -150,35 +178,116 @@
     }
 
     .channel-input {
-      padding: 10px 14px;
+      padding: 11px 16px;
       background: var(--bg-input);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       color: var(--text-main);
       font-size: 14px;
       outline: none;
       width: 180px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .channel-input::placeholder {
+      color: #5a5a63;
     }
 
     .channel-input:focus {
       border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
     .btn {
-      padding: 10px 18px;
+      padding: 11px 20px;
       background: var(--accent);
       color: #fff;
       border: none;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.2s, transform 0.1s;
       white-space: nowrap;
     }
 
     .btn:hover {
       background: var(--accent-hover);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    /* ===== Основная область ===== */
+    main {
+      padding: 28px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    /* ===== Заголовок плеера ===== */
+    .player-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .player-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .player-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--bg-input);
+      border: 2px solid var(--border-light);
+      flex-shrink: 0;
+    }
+
+    .player-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-status {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #eb0400;
+      box-shadow: 0 0 8px #eb0400;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .player-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
     .btn-ghost {
@@ -192,51 +301,26 @@
       border-color: var(--accent);
     }
 
-    /* ===== Основная область ===== */
-    main {
-      padding: 24px;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    .player-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .player-title {
-      font-size: 22px;
-      font-weight: 700;
-    }
-
-    .player-status {
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    .player-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
+    /* ===== Контейнер плеера ===== */
+    .embed-section {
+      position: relative;
+      margin-bottom: 28px;
     }
 
     .embed-container {
       width: 100%;
       background: #000;
-      border-radius: 8px;
+      border-radius: var(--radius);
       overflow: hidden;
       border: 1px solid var(--border);
-      min-height: 480px;
-      transition: all 0.25s ease;
+      min-height: 520px;
+      transition: all 0.3s ease;
     }
 
     #twitch-embed {
       width: 100%;
       height: 100%;
+      min-height: 520px;
     }
 
     /* ===== Режим развёрнутой панели ===== */
@@ -251,23 +335,22 @@
       background: #000;
     }
 
-    /* Кнопка выхода из полноэкранного режима */
     .exit-fullscreen-btn {
       position: fixed;
-      top: 16px;
-      right: 16px;
+      top: 20px;
+      right: 20px;
       z-index: 10000;
-      padding: 10px 16px;
-      background: rgba(24, 24, 27, 0.9);
+      padding: 10px 18px;
+      background: rgba(24, 24, 27, 0.92);
       color: var(--text-main);
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       display: none;
-      backdrop-filter: blur(6px);
-      transition: background 0.15s, border-color 0.15s;
+      backdrop-filter: blur(8px);
+      transition: background 0.2s, border-color 0.2s;
     }
 
     .exit-fullscreen-btn:hover {
@@ -279,13 +362,82 @@
       display: block;
     }
 
+    /* ===== Блок описания стрима ===== */
+    .stream-info {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-top: 8px;
+    }
+
+    .stream-info-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .stream-info-title {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.4;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .stream-info-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .meta-label {
+      color: #5a5a63;
+      font-weight: 500;
+    }
+
+    .meta-value {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .stream-description {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      margin-top: 4px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .stream-description:empty::before {
+      content: 'Описание канала не указано.';
+      color: #5a5a63;
+      font-style: italic;
+    }
+
     /* ===== Подсказка ===== */
     .hint {
-      margin-top: 16px;
-      padding: 12px 16px;
+      margin-top: 20px;
+      padding: 14px 18px;
       background: var(--bg-panel);
       border-left: 3px solid var(--accent);
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       font-size: 13px;
       color: var(--text-muted);
       line-height: 1.6;
@@ -295,7 +447,40 @@
       color: var(--text-main);
     }
 
+    /* ===== Скелетон загрузки ===== */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-input) 25%, #2a2a30 50%, var(--bg-input) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .skeleton-line {
+      height: 14px;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    .skeleton-line.short {
+      width: 60%;
+    }
+
     /* ===== Адаптив ===== */
+    @media (max-width: 900px) {
+      .player-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .stream-info-header {
+        flex-direction: column;
+      }
+    }
+
     @media (max-width: 720px) {
       header {
         flex-wrap: wrap;
@@ -313,12 +498,21 @@
       .embed-container {
         min-height: 380px;
       }
+      #twitch-embed {
+        min-height: 380px;
+      }
+      .stream-info {
+        padding: 18px 20px;
+      }
+      .player-title {
+        font-size: 18px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- ===== Шапка с поиском ===== -->
+  <!-- ===== Шапка ===== -->
   <header>
     <div class="logo">Twitch Viewer</div>
 
@@ -346,25 +540,55 @@
 
   <!-- ===== Основной контент ===== -->
   <main>
+    <!-- Заголовок -->
     <div class="player-header">
-      <div>
-        <div class="player-title" id="playerTitle">Выберите стримера</div>
-        <div class="player-status" id="playerStatus">
-          Введите имя канала или воспользуйтесь поиском
+      <div class="player-title-group">
+        <img id="playerAvatar" class="player-avatar" src="" alt="" style="display:none;" />
+        <div>
+          <div class="player-title" id="playerTitle">Выберите стримера</div>
+          <div class="player-status" id="playerStatus">
+            Введите имя канала или воспользуйтесь поиском
+          </div>
         </div>
       </div>
 
-      <!-- Кнопки управления плеером -->
       <div class="player-actions">
-        <button id="toggleSizeBtn" class="btn btn-ghost">Развернуть</button>
+        <button id="toggleSizeBtn" class="btn btn-ghost">⛶ Развернуть</button>
       </div>
     </div>
 
-    <!-- Сюда встраивается плеер Twitch -->
-    <div class="embed-container" id="embedContainer">
-      <div id="twitch-embed"></div>
+    <!-- Плеер + чат -->
+    <div class="embed-section">
+      <div class="embed-container" id="embedContainer">
+        <div id="twitch-embed"></div>
+      </div>
     </div>
 
+    <!-- Описание стрима -->
+    <div class="stream-info" id="streamInfo">
+      <div class="stream-info-header">
+        <div class="stream-info-title" id="streamInfoTitle">
+          <div class="skeleton skeleton-line" style="width:70%;"></div>
+        </div>
+        <div class="stream-info-meta">
+          <div class="meta-item">
+            <span class="meta-label">Игра:</span>
+            <span class="meta-value" id="streamGame">
+              <span class="skeleton skeleton-line" style="width:80px;display:inline-block;margin-bottom:0;"></span>
+            </span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Зрителей:</span>
+            <span class="meta-value" id="streamViewers">
+              <span class="skeleton skeleton-line" style="width:50px;display:inline-block;margin-bottom:0;"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="stream-description" id="streamDescription"></div>
+    </div>
+
+    <!-- Подсказка -->
     <div class="hint">
       <b>Как войти в чат:</b> авторизация происходит автоматически —
       при попытке отправить сообщение Twitch откроет окно входа.
@@ -372,12 +596,12 @@
     </div>
   </main>
 
-  <!-- Кнопка выхода из полноэкранного режима -->
+  <!-- Кнопка выхода из полного экрана -->
   <button id="exitFullscreenBtn" class="exit-fullscreen-btn">
     ✕ Выйти из полноэкранного режима
   </button>
 
-  <!-- ===== Подключаем официальный Twitch Embed SDK ===== -->
+  <!-- ===== Twitch Embed SDK ===== -->
   <script src="https://embed.twitch.tv/embed/v1.js"></script>
 
   <script>
@@ -388,6 +612,7 @@
     const CLIENT_SECRET = 'ВАШ_CLIENT_SECRET';
 
     let currentChannel = 'twitch';
+    let currentChannelId = null;
     let twitchEmbed = null;
     let appAccessToken = null;
 
@@ -409,20 +634,19 @@
     }
 
     // ================================================================
-    // ИНИЦИАЛИЗАЦИЯ EMBED
+    // ИНИЦИАЛИЗАЦИЯ EMBED (плеер + чат)
     // ================================================================
     function initEmbed(channel) {
       const container = document.getElementById('twitch-embed');
       container.innerHTML = '';
 
-      // Определяем высоту в зависимости от режима
       const isExpanded = document
         .getElementById('embedContainer')
         .classList.contains('expanded');
 
       twitchEmbed = new Twitch.Embed('twitch-embed', {
         width: '100%',
-        height: isExpanded ? '100%' : 480,
+        height: isExpanded ? '100%' : 520,
         channel: channel,
         layout: 'video-with-chat',
         parent: [window.location.hostname],
@@ -432,22 +656,22 @@
       });
 
       document.getElementById('playerTitle').textContent = channel;
-      document.getElementById('playerStatus').textContent =
-        'Стрим загружается...';
+      document.getElementById('playerStatus').innerHTML =
+        '<span class="status-dot"></span> Стрим загружается...';
 
       twitchEmbed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
-        document.getElementById('playerStatus').textContent =
-          'Плеер готов. Войдите в чат, чтобы писать сообщения.';
+        document.getElementById('playerStatus').innerHTML =
+          '<span class="status-dot"></span> Плеер готов. Войдите в чат, чтобы писать сообщения.';
       });
 
       twitchEmbed.addEventListener(Twitch.Embed.VIDEO_PLAY, () => {
-        document.getElementById('playerStatus').textContent =
-          'Сейчас в эфире';
+        document.getElementById('playerStatus').innerHTML =
+          '<span class="status-dot"></span> Сейчас в эфире';
       });
     }
 
     // ================================================================
-    // РАЗВОРАЧИВАНИЕ / СВОРАЧИВАНИЕ ПАНЕЛИ
+    // РАЗВОРАЧИВАНИЕ / СВОРАЧИВАНИЕ
     // ================================================================
     const embedContainer = document.getElementById('embedContainer');
     const toggleSizeBtn = document.getElementById('toggleSizeBtn');
@@ -462,16 +686,15 @@
       if (expand) {
         embedContainer.classList.add('expanded');
         document.body.style.overflow = 'hidden';
-        toggleSizeBtn.textContent = 'Свернуть';
+        toggleSizeBtn.textContent = '⛶ Свернуть';
         exitFullscreenBtn.classList.add('visible');
       } else {
         embedContainer.classList.remove('expanded');
         document.body.style.overflow = '';
-        toggleSizeBtn.textContent = 'Развернуть';
+        toggleSizeBtn.textContent = '⛶ Развернуть';
         exitFullscreenBtn.classList.remove('visible');
       }
 
-      // Пересоздаём плеер, чтобы он занял корректную высоту
       if (twitchEmbed) {
         initEmbed(currentChannel);
       }
@@ -480,12 +703,110 @@
     toggleSizeBtn.addEventListener('click', toggleExpanded);
     exitFullscreenBtn.addEventListener('click', () => setExpanded(false));
 
-    // Выход по Esc
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && embedContainer.classList.contains('expanded')) {
         setExpanded(false);
       }
     });
+
+    // ================================================================
+    // ЗАГРУЗКА ИНФОРМАЦИИ О КАНАЛЕ (описание, игра, зрители)
+    // ================================================================
+    async function loadStreamInfo(channel) {
+      const titleEl = document.getElementById('streamInfoTitle');
+      const gameEl = document.getElementById('streamGame');
+      const viewersEl = document.getElementById('streamViewers');
+      const descEl = document.getElementById('streamDescription');
+
+      // Скелетоны
+      titleEl.innerHTML = '<div class="skeleton skeleton-line" style="width:70%;"></div>';
+      gameEl.innerHTML = '<span class="skeleton skeleton-line" style="width:80px;display:inline-block;margin-bottom:0;"></span>';
+      viewersEl.innerHTML = '<span class="skeleton skeleton-line" style="width:50px;display:inline-block;margin-bottom:0;"></span>';
+      descEl.textContent = '';
+
+      try {
+        const token = await getAppAccessToken();
+
+        // 1. Получаем ID пользователя
+        const userRes = await fetch(
+          `https://api.twitch.tv/helix/users?login=${encodeURIComponent(channel)}`,
+          {
+            headers: {
+              'Client-ID': CLIENT_ID,
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        const userData = await userRes.json();
+
+        if (!userData.data || userData.data.length === 0) {
+          titleEl.textContent = channel;
+          gameEl.textContent = '—';
+          viewersEl.textContent = '—';
+          descEl.textContent = 'Канал не найден.';
+          return;
+        }
+
+        const user = userData.data[0];
+        currentChannelId = user.id;
+
+        // Аватар
+        const avatarEl = document.getElementById('playerAvatar');
+        if (user.profile_image_url) {
+          avatarEl.src = user.profile_image_url;
+          avatarEl.style.display = 'block';
+        }
+
+        // 2. Получаем информацию о канале (описание, игра, заголовок)
+        const channelRes = await fetch(
+          `https://api.twitch.tv/helix/channels?broadcaster_id=${user.id}`,
+          {
+            headers: {
+              'Client-ID': CLIENT_ID,
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        const channelData = await channelRes.json();
+
+        if (channelData.data && channelData.data.length > 0) {
+          const ch = channelData.data[0];
+          titleEl.textContent = ch.title || 'Без названия';
+          gameEl.textContent = ch.game_name || 'Без категории';
+          descEl.textContent = ch.description || '';
+        }
+
+        // 3. Получаем информацию о стриме (зрители, статус)
+        const streamRes = await fetch(
+          `https://api.twitch.tv/helix/streams?user_id=${user.id}`,
+          {
+            headers: {
+              'Client-ID': CLIENT_ID,
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        const streamData = await streamRes.json();
+
+        if (streamData.data && streamData.data.length > 0) {
+          const st = streamData.data[0];
+          viewersEl.textContent = st.viewer_count.toLocaleString('ru-RU');
+          document.getElementById('playerStatus').innerHTML =
+            '<span class="status-dot"></span> Сейчас в эфире · ' + st.viewer_count.toLocaleString('ru-RU') + ' зрителей';
+        } else {
+          viewersEl.textContent = 'Оффлайн';
+          document.getElementById('playerStatus').innerHTML =
+            '📴 Канал не в эфире';
+        }
+
+      } catch (err) {
+        console.error('Ошибка загрузки информации:', err);
+        titleEl.textContent = channel;
+        gameEl.textContent = '—';
+        viewersEl.textContent = '—';
+        descEl.textContent = 'Не удалось загрузить описание.';
+      }
+    }
 
     // ================================================================
     // ПОИСК КАНАЛОВ
@@ -583,6 +904,7 @@
     function switchChannel(channel) {
       currentChannel = channel;
       initEmbed(channel);
+      loadStreamInfo(channel);
     }
 
     const channelInput = document.getElementById('channelInput');
@@ -604,6 +926,7 @@
     // СТАРТ
     // ================================================================
     initEmbed(currentChannel);
+    loadStreamInfo(currentChannel);
   </script>
 </body>
 </html>
