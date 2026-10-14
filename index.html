@@ -4,110 +4,263 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Twitch Viewer — смотри и общайся</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ===== Цветовая палитра в стиле Twitch ===== */
+    /* ============================================================
+       ПЕРЕМЕННЫЕ
+    ============================================================ */
     :root {
-      --bg-main: #0e0e10;      /* основной фон */
-      --bg-panel: #18181b;     /* панели */
-      --bg-input: #1f1f23;     /* поля ввода */
-      --accent: #9147ff;       /* фирменный фиолетовый */
-      --accent-hover: #772ce8;
+      --bg-main: #0e0e10;
+      --bg-panel: #18181b;
+      --bg-elevated: #1f1f23;
+      --bg-hover: #26262c;
+      --accent: #9147ff;
+      --accent-hover: #a970ff;
+      --accent-soft: rgba(145, 71, 255, 0.15);
       --text-main: #efeff1;
       --text-muted: #adadb8;
+      --text-dim: #6f6f78;
       --border: #2f2f35;
+      --border-soft: #232329;
+      --live: #eb0400;
+      --success: #00db84;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.65);
+      --transition: 0.18s ease;
+      --header-h: 64px;
+      --sidebar-w: 280px;
     }
 
+    /* ============================================================
+       БАЗОВЫЕ СТИЛИ
+    ============================================================ */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    html, body {
+      height: 100%;
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg-main);
       color: var(--text-main);
-      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
     }
 
-    /* ===== Верхняя панель ===== */
-    header {
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3f3f48;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: inherit;
+    }
+
+    input {
+      font-family: inherit;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    /* ============================================================
+       ШАПКА
+    ============================================================ */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-soft);
       display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 12px 24px;
-      background: var(--bg-panel);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
+      gap: 20px;
+      padding: 0 20px;
       z-index: 100;
     }
 
     .logo {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(145, 71, 255, 0.35);
+    }
+
+    .logo-text {
+      background: linear-gradient(135deg, #a970ff, #9147ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Поиск */
     .search-wrapper {
       position: relative;
       flex: 1;
-      max-width: 480px;
+      max-width: 520px;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--text-dim);
+      pointer-events: none;
+      font-size: 16px;
     }
 
     .search-input {
       width: 100%;
-      padding: 10px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      padding: 11px 14px 11px 42px;
+      background: var(--bg-elevated);
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
       color: var(--text-main);
       font-size: 14px;
       outline: none;
-      transition: border-color 0.15s;
+      transition: all var(--transition);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-dim);
     }
 
     .search-input:focus {
+      background: var(--bg-main);
       border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
+    .search-clear {
+      position: absolute;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 16px;
+      transition: background var(--transition);
+    }
+
+    .search-clear:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+    }
+
+    .search-clear.visible {
+      display: flex;
+    }
+
+    /* Выпадающие результаты поиска */
     .search-results {
       position: absolute;
-      top: calc(100% + 6px);
+      top: calc(100% + 8px);
       left: 0;
       right: 0;
       background: var(--bg-panel);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      max-height: 360px;
+      border-radius: var(--radius-md);
+      max-height: 420px;
       overflow-y: auto;
       display: none;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      box-shadow: var(--shadow-lg);
+      z-index: 200;
     }
 
     .search-results.visible {
       display: block;
+      animation: fadeSlide 0.15s ease;
+    }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .search-item {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px 14px;
+      padding: 12px 14px;
       cursor: pointer;
-      transition: background 0.12s;
+      transition: background var(--transition);
+      border-bottom: 1px solid var(--border-soft);
     }
 
-    .search-item:hover {
-      background: var(--bg-input);
+    .search-item:last-child {
+      border-bottom: none;
     }
 
-    .search-item img {
-      width: 36px;
-      height: 36px;
+    .search-item:hover,
+    .search-item.active {
+      background: var(--bg-hover);
+    }
+
+    .search-item-avatar {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       object-fit: cover;
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+    }
+
+    .search-item-avatar.live {
+      border-color: var(--live);
     }
 
     .search-item-info {
@@ -121,6 +274,9 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .search-item-game {
@@ -129,91 +285,373 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-top: 2px;
     }
 
+    .search-empty {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* Бейдж LIVE */
     .live-badge {
-      display: inline-block;
-      background: #eb0400;
+      display: inline-flex;
+      align-items: center;
+      background: var(--live);
       color: #fff;
-      font-size: 11px;
-      font-weight: 700;
+      font-size: 10px;
+      font-weight: 800;
       padding: 2px 6px;
       border-radius: 3px;
-      text-transform: uppercase;
-      margin-left: 6px;
+      letter-spacing: 0.5px;
     }
 
-    .channel-input-row {
+    .live-badge::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      background: #fff;
+      border-radius: 50%;
+      margin-right: 4px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Кнопки в шапке */
+    .header-actions {
       display: flex;
-      gap: 8px;
       align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      flex-shrink: 0;
     }
 
-    .channel-input {
-      padding: 10px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 6px;
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 18px;
+      transition: all var(--transition);
+    }
+
+    .icon-btn:hover {
+      background: var(--bg-hover);
       color: var(--text-main);
-      font-size: 14px;
-      outline: none;
-      width: 180px;
     }
 
-    .channel-input:focus {
-      border-color: var(--accent);
+    .icon-btn.active {
+      color: var(--accent);
+      background: var(--accent-soft);
     }
 
-    .btn {
-      padding: 10px 18px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
+    /* ============================================================
+       БОКОВАЯ ПАНЕЛЬ
+    ============================================================ */
+    .sidebar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-w);
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-soft);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform var(--transition);
+      z-index: 50;
+    }
+
+    .sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+
+    .sidebar-tabs {
+      display: flex;
+      padding: 8px;
+      gap: 4px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .sidebar-tab {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
       font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s;
+      color: var(--text-muted);
+      text-align: center;
+      transition: all var(--transition);
       white-space: nowrap;
     }
 
-    .btn:hover {
-      background: var(--accent-hover);
+    .sidebar-tab:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
     }
 
-    /* ===== Основная область ===== */
-    main {
-      padding: 24px;
-      max-width: 1400px;
-      margin: 0 auto;
+    .sidebar-tab.active {
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+
+    .sidebar-section {
+      margin-bottom: 20px;
+    }
+
+    .sidebar-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+      padding: 0 6px;
+    }
+
+    .channel-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .channel-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background var(--transition);
+      position: relative;
+    }
+
+    .channel-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .channel-item.active {
+      background: var(--accent-soft);
+    }
+
+    .channel-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      bottom: 20%;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+    }
+
+    .channel-item-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--bg-elevated);
+    }
+
+    .channel-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .channel-item-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .channel-item-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+
+    .channel-item-remove {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .channel-item:hover .channel-item-remove {
+      display: flex;
+    }
+
+    .channel-item-remove:hover {
+      background: rgba(235, 4, 0, 0.15);
+      color: var(--live);
+    }
+
+    .sidebar-empty {
+      padding: 24px 12px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .sidebar-empty-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      opacity: 0.5;
+    }
+
+    /* ============================================================
+       ОСНОВНАЯ ОБЛАСТЬ
+    ============================================================ */
+    .main {
+      position: fixed;
+      top: var(--header-h);
+      left: var(--sidebar-w);
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 16px;
+      overflow: hidden;
+      transition: left var(--transition);
+    }
+
+    .main.sidebar-collapsed {
+      left: 0;
+    }
+
+    /* Заголовок плеера */
     .player-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
+      gap: 16px;
       flex-wrap: wrap;
-      gap: 12px;
+    }
+
+    .player-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .player-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      background: var(--bg-elevated);
+    }
+
+    .player-avatar.live {
+      border-color: var(--live);
+      box-shadow: 0 0 0 3px rgba(235, 4, 0, 0.2);
+    }
+
+    .player-titles {
+      min-width: 0;
     }
 
     .player-title {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
-    }
-
-    .player-status {
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    .embed-container {
-      width: 100%;
-      background: #000;
-      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
       overflow: hidden;
-      border: 1px solid var(--border);
-      min-height: 480px;
+      text-overflow: ellipsis;
+    }
+
+    .player-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .player-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      background: var(--bg-elevated);
+      color: var(--text-main);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--bg-hover);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 12px rgba(145, 71, 255, 0.35);
+    }
+
+    .btn-favorite.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    /* Область с плеером */
+    .player-area {
+      flex: 1;
+      display: flex;
+      background: #000;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-soft);
+      min-height: 0;
+      box-shadow: var(--shadow-md);
     }
 
     #twitch-embed {
@@ -221,129 +659,410 @@
       height: 100%;
     }
 
-    /* ===== Подсказка, если чат не виден ===== */
-    .hint {
-      margin-top: 16px;
-      padding: 12px 16px;
-      background: var(--bg-panel);
-      border-left: 3px solid var(--accent);
-      border-radius: 4px;
+    #twitch-embed iframe {
+      display: block;
+    }
+
+    /* Состояние загрузки */
+    .player-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: var(--bg-main);
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .player-loading.visible {
+      opacity: 1;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .player-loading-text {
       font-size: 13px;
       color: var(--text-muted);
-      line-height: 1.6;
     }
 
-    .hint b {
-      color: var(--text-main);
+    /* ============================================================
+       АДАПТИВ
+    ============================================================ */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 40;
+      opacity: 0;
+      transition: opacity var(--transition);
     }
 
-    /* ===== Адаптив ===== */
-    @media (max-width: 720px) {
-      header {
-        flex-wrap: wrap;
-        padding: 12px 16px;
+    .sidebar-overlay.visible {
+      display: block;
+      opacity: 1;
+    }
+
+    @media (max-width: 900px) {
+      :root {
+        --sidebar-w: 280px;
       }
-      .channel-input-row {
+
+      .sidebar {
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar.collapsed {
+        transform: translateX(-100%);
+      }
+
+      .main {
+        left: 0;
+      }
+
+      .main.sidebar-collapsed {
+        left: 0;
+      }
+
+      .search-wrapper {
+        max-width: none;
+      }
+
+      .logo-text {
+        display: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .header {
+        padding: 0 12px;
+        gap: 10px;
+      }
+
+      .main {
+        padding: 12px;
+        gap: 12px;
+      }
+
+      .player-title {
+        font-size: 16px;
+      }
+
+      .player-avatar {
+        width: 38px;
+        height: 38px;
+      }
+
+      .player-actions {
         width: 100%;
       }
-      .channel-input {
+
+      .player-actions .btn {
         flex: 1;
+        justify-content: center;
       }
-      main {
-        padding: 16px;
-      }
-      .embed-container {
-        min-height: 380px;
+
+      .search-input {
+        padding: 9px 12px 9px 38px;
+        font-size: 13px;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- ===== Шапка с поиском ===== -->
-  <header>
-    <div class="logo">Twitch Viewer</div>
+  <!-- ============================================================
+       ШАПКА
+  ============================================================ -->
+  <header class="header">
+    <button class="icon-btn" id="sidebarToggle" title="Меню">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
 
-    <!-- Поиск каналов -->
+    <div class="logo">
+      <div class="logo-icon">🎮</div>
+      <div class="logo-text">Twitch Viewer</div>
+    </div>
+
     <div class="search-wrapper">
-      <input
-        type="text"
-        id="searchInput"
-        class="search-input"
-        placeholder="Поиск стримера..."
-        autocomplete="off"
-      />
+      <div class="search-box">
+        <span class="search-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <input
+          type="text"
+          id="searchInput"
+          class="search-input"
+          placeholder="Поиск стримеров, каналов, категорий..."
+          autocomplete="off"
+        />
+        <button class="search-clear" id="searchClear" title="Очистить">✕</button>
+      </div>
       <div id="searchResults" class="search-results"></div>
     </div>
 
-    <!-- Ручной ввод канала -->
-    <div class="channel-input-row">
-      <input
-        type="text"
-        id="channelInput"
-        class="channel-input"
-        placeholder="Имя канала"
-      />
-      <button id="loadBtn" class="btn">Смотреть</button>
+    <div class="header-actions">
+      <button class="icon-btn" id="randomBtn" title="Случайный стрим">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <line x1="4" y1="20" x2="21" y2="3"></line>
+          <polyline points="21 16 21 21 16 21"></polyline>
+          <line x1="15" y1="15" x2="21" y2="21"></line>
+          <line x1="4" y1="4" x2="9" y2="9"></line>
+        </svg>
+      </button>
     </div>
   </header>
 
-  <!-- ===== Основной контент ===== -->
-  <main>
-    <div class="player-header">
-      <div>
-        <div class="player-title" id="playerTitle">Выберите стримера</div>
-        <div class="player-status" id="playerStatus">
-          Введите имя канала или воспользуйтесь поиском
+  <!-- ============================================================
+       БОКОВАЯ ПАНЕЛЬ
+  ============================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" data-tab="favorites">Избранное</button>
+      <button class="sidebar-tab" data-tab="top">Топ стримов</button>
+    </div>
+
+    <div class="sidebar-content">
+      <!-- Избранные каналы -->
+      <div class="sidebar-section" id="favoritesSection">
+        <div class="channel-list" id="favoritesList"></div>
+      </div>
+
+      <!-- Топ стримов -->
+      <div class="sidebar-section" id="topSection" style="display: none;">
+        <div class="channel-list" id="topList">
+          <div class="sidebar-empty">
+            <div class="spinner" style="margin: 0 auto 12px;"></div>
+            Загрузка топа...
+          </div>
         </div>
       </div>
     </div>
+  </aside>
 
-    <!-- Сюда встраивается плеер Twitch -->
-    <div class="embed-container">
-      <div id="twitch-embed"></div>
+  <!-- Оверлей для мобильных -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ============================================================
+       ОСНОВНАЯ ОБЛАСТЬ
+  ============================================================ -->
+  <main class="main" id="main">
+    <div class="player-header">
+      <div class="player-info">
+        <img class="player-avatar" id="playerAvatar" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%231f1f23'/%3E%3C/svg%3E" />
+        <div class="player-titles">
+          <div class="player-title" id="playerTitle">Выберите стримера</div>
+          <div class="player-subtitle" id="playerSubtitle">
+            Введите имя канала или воспользуйтесь поиском
+          </div>
+        </div>
+      </div>
+      <div class="player-actions">
+        <button class="btn btn-favorite" id="favoriteBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          <span id="favoriteBtnText">В избранное</span>
+        </button>
+        <button class="btn" id="openTwitchBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          На Twitch
+        </button>
+      </div>
     </div>
 
-    <div class="hint">
-      <b>Как войти в чат:</b> авторизация происходит автоматически —
-      при попытке отправить сообщение Twitch откроет окно входа.
-      Аккаунт Twitch не требуется создавать отдельно на этом сайте.
+    <div class="player-area">
+      <div id="twitch-embed"></div>
     </div>
   </main>
 
-  <!-- ===== Подключаем официальный Twitch Embed SDK ===== -->
+  <!-- ============================================================
+       СКРИПТЫ
+  ============================================================ -->
   <script src="https://embed.twitch.tv/embed/v1.js"></script>
-
   <script>
     // ================================================================
     // НАСТРОЙКИ
     // ================================================================
+    // 1. Зарегистрируйте приложение: https://dev.twitch.tv/console/apps
+    // 2. Получите CLIENT_ID и CLIENT_SECRET
+    // 3. Вставьте их ниже
     //
-    // 1. Зарегистрируйте приложение на https://dev.twitch.tv/console/apps
-    // 2. Получите CLIENT_ID
-    // 3. Для поиска каналов нужен App Access Token (см. ниже функцию
-    //    getAppAccessToken — она использует CLIENT_SECRET).
-    //
-    // ВНИМАНИЕ: CLIENT_SECRET нельзя держать на фронтенде в продакшене!
+    // ВАЖНО: CLIENT_SECRET нельзя держать на фронтенде в продакшене!
     // Для реального проекта вынесите получение токена на бэкенд.
-    // Для локального теста можно указать временно.
     // ================================================================
 
     const CLIENT_ID = 'ВАШ_CLIENT_ID';
     const CLIENT_SECRET = 'ВАШ_CLIENT_SECRET';
 
-    // Имя канала по умолчанию
-    let currentChannel = 'twitch';
-
-    // Переменные для Embed и токена
-    let twitchEmbed = null;
-    let appAccessToken = null;
+    const DEFAULT_CHANNEL = 'twitch';
+    const STORAGE_KEY = 'twitch_viewer_favorites';
 
     // ================================================================
-    // ПОЛУЧЕНИЕ APP ACCESS TOKEN (для поиска каналов)
+    // СОСТОЯНИЕ
+    // ================================================================
+    const state = {
+      currentChannel: DEFAULT_CHANNEL,
+      currentChannelData: null,
+      favorites: [],
+      topStreams: [],
+      appAccessToken: null,
+      embed: null,
+      activeTab: 'favorites'
+    };
+
+    // ================================================================
+    // DOM-ЭЛЕМЕНТЫ
+    // ================================================================
+    const els = {
+      searchInput: document.getElementById('searchInput'),
+      searchClear: document.getElementById('searchClear'),
+      searchResults: document.getElementById('searchResults'),
+      sidebar: document.getElementById('sidebar'),
+      sidebarToggle: document.getElementById('sidebarToggle'),
+      sidebarOverlay: document.getElementById('sidebarOverlay'),
+      sidebarTabs: document.querySelectorAll('.sidebar-tab'),
+      favoritesSection: document.getElementById('favoritesSection'),
+      topSection: document.getElementById('topSection'),
+      favoritesList: document.getElementById('favoritesList'),
+      topList: document.getElementById('topList'),
+      main: document.getElementById('main'),
+      playerTitle: document.getElementById('playerTitle'),
+      playerSubtitle: document.getElementById('playerSubtitle'),
+      playerAvatar: document.getElementById('playerAvatar'),
+      favoriteBtn: document.getElementById('favoriteBtn'),
+      favoriteBtnText: document.getElementById('favoriteBtnText'),
+      openTwitchBtn: document.getElementById('openTwitchBtn'),
+      randomBtn: document.getElementById('randomBtn'),
+      embedContainer: document.getElementById('twitch-embed')
+    };
+
+    // ================================================================
+    // УТИЛИТЫ
+    // ================================================================
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatViewers(n) {
+      if (!n && n !== 0) return '';
+      if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K';
+      return String(n);
+    }
+
+    function debounce(fn, delay) {
+      let t;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    // ================================================================
+    // ХРАНИЛИЩЕ (localStorage)
+    // ================================================================
+    function loadFavorites() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        state.favorites = raw ? JSON.parse(raw) : [];
+      } catch {
+        state.favorites = [];
+      }
+    }
+
+    function saveFavorites() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.favorites));
+      } catch (e) {
+        console.warn('Не удалось сохранить избранное:', e);
+      }
+    }
+
+    function isFavorite(channel) {
+      return state.favorites.some(f => f.login === channel);
+    }
+
+    function addFavorite(channelData) {
+      if (isFavorite(channelData.login)) return;
+      state.favorites.push(channelData);
+      saveFavorites();
+      renderFavorites();
+      updateFavoriteButton();
+    }
+
+    function removeFavorite(channel) {
+      state.favorites = state.favorites.filter(f => f.login !== channel);
+      saveFavorites();
+      renderFavorites();
+      updateFavoriteButton();
+    }
+
+    function toggleFavorite() {
+      const ch = state.currentChannel;
+      if (isFavorite(ch)) {
+        removeFavorite(ch);
+      } else {
+        const data = state.currentChannelData || {
+          login: ch,
+          display_name: ch,
+          profile_image_url: '',
+          game_name: ''
+        };
+        addFavorite(data);
+      }
+    }
+
+    function updateFavoriteButton() {
+      const fav = isFavorite(state.currentChannel);
+      els.favoriteBtn.classList.toggle('active', fav);
+      els.favoriteBtnText.textContent = fav ? 'В избранном' : 'В избранное';
+    }
+
+    // ================================================================
+    // TWITCH API
     // ================================================================
     async function getAppAccessToken() {
-      if (appAccessToken) return appAccessToken;
+      if (state.appAccessToken) return state.appAccessToken;
 
       const url = `https://id.twitch.tv/oauth2/token` +
         `?client_id=${CLIENT_ID}` +
@@ -351,169 +1070,437 @@
         `&grant_type=client_credentials`;
 
       const res = await fetch(url, { method: 'POST' });
+      if (!res.ok) throw new Error('Не удалось получить токен');
       const data = await res.json();
-      appAccessToken = data.access_token;
-      return appAccessToken;
+      state.appAccessToken = data.access_token;
+      return state.appAccessToken;
+    }
+
+    async function apiGet(path) {
+      const token = await getAppAccessToken();
+      const res = await fetch(`https://api.twitch.tv/helix${path}`, {
+        headers: {
+          'Client-ID': CLIENT_ID,
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      return res.json();
+    }
+
+    async function searchChannels(query) {
+      try {
+        const data = await apiGet(
+          `/search/channels?query=${encodeURIComponent(query)}&first=10`
+        );
+        return data.data || [];
+      } catch (err) {
+        console.error('Ошибка поиска:', err);
+        return [];
+      }
+    }
+
+    async function getUserByLogin(login) {
+      try {
+        const data = await apiGet(`/users?login=${encodeURIComponent(login)}`);
+        return data.data && data.data[0] ? data.data[0] : null;
+      } catch (err) {
+        console.error('Ошибка получения пользователя:', err);
+        return null;
+      }
+    }
+
+    async function getStreamByLogin(login) {
+      try {
+        const data = await apiGet(`/streams?user_login=${encodeURIComponent(login)}`);
+        return data.data && data.data[0] ? data.data[0] : null;
+      } catch (err) {
+        console.error('Ошибка получения стрима:', err);
+        return null;
+      }
+    }
+
+    async function getTopStreams(first = 20) {
+      try {
+        const data = await apiGet(`/streams?first=${first}`);
+        return data.data || [];
+      } catch (err) {
+        console.error('Ошибка получения топа:', err);
+        return [];
+      }
     }
 
     // ================================================================
-    // ИНИЦИАЛИЗАЦИЯ EMBED С ПЛЕЕРОМ И ЧАТОМ
+    // EMBED ПЛЕЕРА
     // ================================================================
     function initEmbed(channel) {
-      // Если Embed уже создан — удаляем старый iframe
-      const container = document.getElementById('twitch-embed');
-      container.innerHTML = '';
+      els.embedContainer.innerHTML = '';
 
-      // Twitch.Embed создаёт iframe с плеером и чатом
-      twitchEmbed = new Twitch.Embed('twitch-embed', {
+      state.embed = new Twitch.Embed('twitch-embed', {
         width: '100%',
-        height: 480,
+        height: '100%',
         channel: channel,
-        layout: 'video-with-chat',   // плеер + чат
-        parent: [window.location.hostname], // ВАЖНО: ваш домен
+        layout: 'video-with-chat',
+        parent: [window.location.hostname],
         theme: 'dark',
         autoplay: true,
         muted: false
       });
 
-      // Обновляем заголовок
-      document.getElementById('playerTitle').textContent = channel;
-      document.getElementById('playerStatus').textContent =
-        'Стрим загружается...';
-
-      // Слушаем события плеера
-      twitchEmbed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
-        document.getElementById('playerStatus').textContent =
-          'Плеер готов. Войдите в чат, чтобы писать сообщения.';
-      });
-
-      twitchEmbed.addEventListener(Twitch.Embed.VIDEO_PLAY, () => {
-        document.getElementById('playerStatus').textContent =
-          'Сейчас в эфире';
+      state.embed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
+        updatePlayerStatus();
       });
     }
 
     // ================================================================
-    // ПОИСК КАНАЛОВ ЧЕРЕЗ HELIX API
+    // ПЕРЕКЛЮЧЕНИЕ КАНАЛА
     // ================================================================
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
-    let searchTimeout = null;
+    async function switchChannel(channel, channelData = null) {
+      channel = channel.toLowerCase().trim();
+      if (!channel) return;
 
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      const query = searchInput.value.trim();
+      state.currentChannel = channel;
 
-      if (query.length < 2) {
-        searchResults.classList.remove('visible');
-        searchResults.innerHTML = '';
-        return;
-      }
+      // Обновляем UI сразу
+      els.playerTitle.textContent = channelData?.display_name || channel;
+      els.playerSubtitle.textContent = 'Загрузка...';
+      els.playerAvatar.src = channelData?.profile_image_url ||
+        'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%231f1f23%22/%3E%3C/svg%3E';
+      els.playerAvatar.classList.remove('live');
 
-      // Задержка, чтобы не спамить API
-      searchTimeout = setTimeout(() => searchChannels(query), 350);
-    });
+      updateFavoriteButton();
+      highlightActiveChannel();
 
-    async function searchChannels(query) {
+      // Загружаем плеер
+      initEmbed(channel);
+
+      // Догружаем данные о канале и стриме
       try {
-        const token = await getAppAccessToken();
+        const [user, stream] = await Promise.all([
+          channelData ? Promise.resolve(channelData) : getUserByLogin(channel),
+          getStreamByLogin(channel)
+        ]);
 
-        const url = `https://api.twitch.tv/helix/search/channels` +
-          `?query=${encodeURIComponent(query)}&first=10`;
-
-        const res = await fetch(url, {
-          headers: {
-            'Client-ID': CLIENT_ID,
-            'Authorization': `Bearer ${token}`
+        if (user) {
+          state.currentChannelData = {
+            login: user.login,
+            display_name: user.display_name,
+            profile_image_url: user.profile_image_url,
+            game_name: stream?.game_name || ''
+          };
+          els.playerTitle.textContent = user.display_name;
+          if (user.profile_image_url) {
+            els.playerAvatar.src = user.profile_image_url;
           }
-        });
+        }
 
-        const data = await res.json();
-        renderSearchResults(data.data || []);
+        if (stream) {
+          els.playerAvatar.classList.add('live');
+          els.playerSubtitle.innerHTML =
+            `<span class="live-badge">LIVE</span> ` +
+            `${escapeHtml(stream.game_name || 'Без категории')} · ` +
+            `${formatViewers(stream.viewer_count)} зрителей`;
+        } else {
+          els.playerSubtitle.textContent = 'Не в эфире';
+        }
+
+        updateFavoriteButton();
       } catch (err) {
-        console.error('Ошибка поиска:', err);
+        console.error(err);
+        els.playerSubtitle.textContent = 'Не удалось загрузить данные';
       }
     }
 
-    function renderSearchResults(channels) {
-      if (channels.length === 0) {
-        searchResults.innerHTML =
-          '<div class="search-item"><div class="search-item-name">' +
-          'Ничего не найдено</div></div>';
-        searchResults.classList.add('visible');
+    function updatePlayerStatus() {
+      // Обновление статуса после готовности плеера
+      if (!state.currentChannelData) {
+        els.playerSubtitle.textContent = 'Плеер готов';
+      }
+    }
+
+    // ================================================================
+    // ОТРИСОВКА ИЗБРАННОГО
+    // ================================================================
+    function renderFavorites() {
+      if (state.favorites.length === 0) {
+        els.favoritesList.innerHTML = `
+          <div class="sidebar-empty">
+            <div class="sidebar-empty-icon">⭐</div>
+            Добавьте каналы в избранное,<br>чтобы быстро к ним возвращаться
+          </div>
+        `;
         return;
       }
 
-      searchResults.innerHTML = channels.map(ch => {
-        const liveBadge = ch.is_live
-          ? '<span class="live-badge">LIVE</span>'
-          : '';
-        const game = ch.game_name || 'Без категории';
-        const avatar = ch.thumbnail_url || '';
+      els.favoritesList.innerHTML = state.favorites.map(fav => `
+        <div class="channel-item" data-channel="${escapeHtml(fav.login)}">
+          <img class="channel-item-avatar"
+               src="${escapeHtml(fav.profile_image_url || '')}"
+               alt=""
+               onerror="this.style.visibility='hidden'" />
+          <div class="channel-item-info">
+            <div class="channel-item-name">${escapeHtml(fav.display_name || fav.login)}</div>
+            <div class="channel-item-meta">${escapeHtml(fav.game_name || 'Канал')}</div>
+          </div>
+          <button class="channel-item-remove" data-remove="${escapeHtml(fav.login)}" title="Удалить">✕</button>
+        </div>
+      `).join('');
 
+      els.favoritesList.querySelectorAll('.channel-item').forEach(el => {
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('[data-remove]')) return;
+          switchChannel(el.dataset.channel);
+          closeSidebarOnMobile();
+        });
+      });
+
+      els.favoritesList.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          removeFavorite(btn.dataset.remove);
+        });
+      });
+
+      highlightActiveChannel();
+    }
+
+    // ================================================================
+    // ОТРИСОВКА ТОПА СТРИМОВ
+    // ================================================================
+    function renderTopStreams() {
+      if (state.topStreams.length === 0) {
+        els.topList.innerHTML = `
+          <div class="sidebar-empty">
+            <div class="sidebar-empty-icon">📺</div>
+            Не удалось загрузить топ стримов
+          </div>
+        `;
+        return;
+      }
+
+      els.topList.innerHTML = state.topStreams.map(s => `
+        <div class="channel-item" data-channel="${escapeHtml(s.user_login)}">
+          <img class="channel-item-avatar"
+               src="${escapeHtml(s.thumbnail_url || '')}"
+               alt=""
+               style="object-fit: cover;"
+               onerror="this.style.visibility='hidden'" />
+          <div class="channel-item-info">
+            <div class="channel-item-name">
+              ${escapeHtml(s.user_name)}
+            </div>
+            <div class="channel-item-meta">
+              ${escapeHtml(s.game_name || 'Без категории')} · ${formatViewers(s.viewer_count)}
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      els.topList.querySelectorAll('.channel-item').forEach(el => {
+        el.addEventListener('click', () => {
+          switchChannel(el.dataset.channel);
+          closeSidebarOnMobile();
+        });
+      });
+
+      highlightActiveChannel();
+    }
+
+    function highlightActiveChannel() {
+      document.querySelectorAll('.channel-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.channel === state.currentChannel);
+      });
+    }
+
+    // ================================================================
+    // ПОИСК
+    // ================================================================
+    function showSearchResults(channels) {
+      if (channels.length === 0) {
+        els.searchResults.innerHTML =
+          '<div class="search-empty">Ничего не найдено</div>';
+        els.searchResults.classList.add('visible');
+        return;
+      }
+
+      els.searchResults.innerHTML = channels.map(ch => {
+        const avatar = ch.thumbnail_url || '';
+        const live = ch.is_live;
         return `
-          <div class="search-item" data-channel="${ch.broadcaster_login}">
-            <img src="${avatar}" alt="${ch.display_name}" />
+          <div class="search-item" data-channel="${escapeHtml(ch.broadcaster_login)}">
+            <img class="search-item-avatar ${live ? 'live' : ''}"
+                 src="${escapeHtml(avatar)}"
+                 alt=""
+                 onerror="this.style.visibility='hidden'" />
             <div class="search-item-info">
               <div class="search-item-name">
-                ${ch.display_name}${liveBadge}
+                ${escapeHtml(ch.display_name)}
+                ${live ? '<span class="live-badge">LIVE</span>' : ''}
               </div>
-              <div class="search-item-game">${game}</div>
+              <div class="search-item-game">
+                ${escapeHtml(ch.game_name || 'Без категории')}
+              </div>
             </div>
           </div>
         `;
       }).join('');
 
-      searchResults.classList.add('visible');
+      els.searchResults.classList.add('visible');
 
-      // Клик по результату — переключить канал
-      searchResults.querySelectorAll('.search-item').forEach(el => {
+      els.searchResults.querySelectorAll('.search-item').forEach(el => {
         el.addEventListener('click', () => {
-          const channel = el.dataset.channel;
-          if (channel) {
-            switchChannel(channel);
-            searchInput.value = '';
-            searchResults.classList.remove('visible');
-          }
+          switchChannel(el.dataset.channel);
+          els.searchInput.value = '';
+          els.searchClear.classList.remove('visible');
+          els.searchResults.classList.remove('visible');
         });
       });
     }
 
-    // Скрываем результаты при клике вне поиска
+    const performSearch = debounce(async (query) => {
+      const channels = await searchChannels(query);
+      showSearchResults(channels);
+    }, 350);
+
+    els.searchInput.addEventListener('input', () => {
+      const query = els.searchInput.value.trim();
+      els.searchClear.classList.toggle('visible', query.length > 0);
+
+      if (query.length < 2) {
+        els.searchResults.classList.remove('visible');
+        els.searchResults.innerHTML = '';
+        return;
+      }
+      performSearch(query);
+    });
+
+    els.searchClear.addEventListener('click', () => {
+      els.searchInput.value = '';
+      els.searchClear.classList.remove('visible');
+      els.searchResults.classList.remove('visible');
+      els.searchInput.focus();
+    });
+
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.search-wrapper')) {
-        searchResults.classList.remove('visible');
+        els.searchResults.classList.remove('visible');
       }
     });
 
     // ================================================================
-    // ПЕРЕКЛЮЧЕНИЕ КАНАЛА
+    // БОКОВАЯ ПАНЕЛЬ
     // ================================================================
-    function switchChannel(channel) {
-      currentChannel = channel;
-      initEmbed(channel);
+    function isMobile() {
+      return window.matchMedia('(max-width: 900px)').matches;
     }
 
-    // Ручной ввод канала
-    const channelInput = document.getElementById('channelInput');
-    const loadBtn = document.getElementById('loadBtn');
+    function openSidebar() {
+      if (isMobile()) {
+        els.sidebar.classList.add('open');
+        els.sidebarOverlay.classList.add('visible');
+      } else {
+        els.sidebar.classList.remove('collapsed');
+        els.main.classList.remove('sidebar-collapsed');
+      }
+    }
 
-    loadBtn.addEventListener('click', () => {
-      const ch = channelInput.value.trim().toLowerCase();
-      if (ch) switchChannel(ch);
+    function closeSidebar() {
+      if (isMobile()) {
+        els.sidebar.classList.remove('open');
+        els.sidebarOverlay.classList.remove('visible');
+      } else {
+        els.sidebar.classList.add('collapsed');
+        els.main.classList.add('sidebar-collapsed');
+      }
+    }
+
+    function toggleSidebar() {
+      const isOpen = isMobile()
+        ? els.sidebar.classList.contains('open')
+        : !els.sidebar.classList.contains('collapsed');
+      if (isOpen) closeSidebar();
+      else openSidebar();
+    }
+
+    function closeSidebarOnMobile() {
+      if (isMobile()) {
+        els.sidebar.classList.remove('open');
+        els.sidebarOverlay.classList.remove('visible');
+      }
+    }
+
+    els.sidebarToggle.addEventListener('click', toggleSidebar);
+    els.sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // Переключение табов
+    els.sidebarTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        els.sidebarTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        state.activeTab = tab.dataset.tab;
+
+        els.favoritesSection.style.display = state.activeTab === 'favorites' ? '' : 'none';
+        els.topSection.style.display = state.activeTab === 'top' ? '' : 'none';
+
+        if (state.activeTab === 'top' && state.topStreams.length === 0) {
+          loadTopStreams();
+        }
+      });
     });
 
-    channelInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const ch = channelInput.value.trim().toLowerCase();
-        if (ch) switchChannel(ch);
+    // ================================================================
+    // ТОП СТРИМОВ — ЗАГРУЗКА
+    // ================================================================
+    async function loadTopStreams() {
+      els.topList.innerHTML = `
+        <div class="sidebar-empty">
+          <div class="spinner" style="margin: 0 auto 12px;"></div>
+          Загрузка топа...
+        </div>
+      `;
+      const streams = await getTopStreams(20);
+      state.topStreams = streams;
+      renderTopStreams();
+    }
+
+    // ================================================================
+    // КНОПКИ ДЕЙСТВИЙ
+    // ================================================================
+    els.favoriteBtn.addEventListener('click', toggleFavorite);
+
+    els.openTwitchBtn.addEventListener('click', () => {
+      window.open(`https://twitch.tv/${state.currentChannel}`, '_blank');
+    });
+
+    els.randomBtn.addEventListener('click', async () => {
+      try {
+        const streams = await getTopStreams(50);
+        if (streams.length > 0) {
+          const random = streams[Math.floor(Math.random() * streams.length)];
+          switchChannel(random.user_login);
+        }
+      } catch (err) {
+        console.error(err);
       }
     });
 
     // ================================================================
-    // СТАРТ: загружаем канал по умолчанию
+    // ИНИЦИАЛИЗАЦИЯ
     // ================================================================
-    initEmbed(currentChannel);
+    function init() {
+      loadFavorites();
+      renderFavorites();
+
+      // На мобильных изначально панель закрыта, на десктопе — открыта
+      if (isMobile()) {
+        els.sidebar.classList.remove('open');
+      }
+
+      // Загружаем канал по умолчанию
+      switchChannel(DEFAULT_CHANNEL);
+    }
+
+    init();
   </script>
 </body>
 </html>
