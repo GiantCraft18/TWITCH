@@ -40,6 +40,7 @@
     header {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 16px;
       padding: 14px 28px;
       background: var(--bg-panel);
@@ -70,107 +71,6 @@
       box-shadow: 0 0 12px var(--accent);
     }
 
-    .search-wrapper {
-      position: relative;
-      flex: 1;
-      max-width: 420px;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 11px 16px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text-main);
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .search-input::placeholder {
-      color: #5a5a63;
-    }
-
-    .search-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-    }
-
-    .search-results {
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      right: 0;
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      max-height: 380px;
-      overflow-y: auto;
-      display: none;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
-      z-index: 200;
-    }
-
-    .search-results.visible {
-      display: block;
-    }
-
-    .search-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .search-item:hover {
-      background: var(--bg-input);
-    }
-
-    .search-item img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      background: var(--bg-input);
-    }
-
-    .search-item-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .search-item-name {
-      font-size: 14px;
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .search-item-game {
-      font-size: 12px;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .live-badge {
-      display: inline-block;
-      background: #eb0400;
-      color: #fff;
-      font-size: 10px;
-      font-weight: 800;
-      padding: 2px 7px;
-      border-radius: 3px;
-      text-transform: uppercase;
-      margin-left: 8px;
-      letter-spacing: 0.5px;
-    }
-
     .channel-input-row {
       display: flex;
       gap: 8px;
@@ -185,7 +85,7 @@
       color: var(--text-main);
       font-size: 14px;
       outline: none;
-      width: 180px;
+      width: 220px;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
 
@@ -466,10 +366,6 @@
       width: 100%;
     }
 
-    .skeleton-line.short {
-      width: 60%;
-    }
-
     /* ===== Адаптив ===== */
     @media (max-width: 900px) {
       .player-header {
@@ -491,6 +387,7 @@
       }
       .channel-input {
         flex: 1;
+        width: auto;
       }
       main {
         padding: 16px;
@@ -516,17 +413,6 @@
   <header>
     <div class="logo">Twitch Viewer</div>
 
-    <div class="search-wrapper">
-      <input
-        type="text"
-        id="searchInput"
-        class="search-input"
-        placeholder="Поиск стримера..."
-        autocomplete="off"
-      />
-      <div id="searchResults" class="search-results"></div>
-    </div>
-
     <div class="channel-input-row">
       <input
         type="text"
@@ -547,7 +433,7 @@
         <div>
           <div class="player-title" id="playerTitle">Выберите стримера</div>
           <div class="player-status" id="playerStatus">
-            Введите имя канала или воспользуйтесь поиском
+            Введите имя канала, чтобы начать просмотр
           </div>
         </div>
       </div>
@@ -710,7 +596,7 @@
     });
 
     // ================================================================
-    // ЗАГРУЗКА ИНФОРМАЦИИ О КАНАЛЕ (описание, игра, зрители)
+    // ЗАГРУЗКА ИНФОРМАЦИИ О КАНАЛЕ
     // ================================================================
     async function loadStreamInfo(channel) {
       const titleEl = document.getElementById('streamInfoTitle');
@@ -718,7 +604,6 @@
       const viewersEl = document.getElementById('streamViewers');
       const descEl = document.getElementById('streamDescription');
 
-      // Скелетоны
       titleEl.innerHTML = '<div class="skeleton skeleton-line" style="width:70%;"></div>';
       gameEl.innerHTML = '<span class="skeleton skeleton-line" style="width:80px;display:inline-block;margin-bottom:0;"></span>';
       viewersEl.innerHTML = '<span class="skeleton skeleton-line" style="width:50px;display:inline-block;margin-bottom:0;"></span>';
@@ -727,7 +612,7 @@
       try {
         const token = await getAppAccessToken();
 
-        // 1. Получаем ID пользователя
+        // 1. ID пользователя
         const userRes = await fetch(
           `https://api.twitch.tv/helix/users?login=${encodeURIComponent(channel)}`,
           {
@@ -750,14 +635,13 @@
         const user = userData.data[0];
         currentChannelId = user.id;
 
-        // Аватар
         const avatarEl = document.getElementById('playerAvatar');
         if (user.profile_image_url) {
           avatarEl.src = user.profile_image_url;
           avatarEl.style.display = 'block';
         }
 
-        // 2. Получаем информацию о канале (описание, игра, заголовок)
+        // 2. Информация о канале
         const channelRes = await fetch(
           `https://api.twitch.tv/helix/channels?broadcaster_id=${user.id}`,
           {
@@ -776,7 +660,7 @@
           descEl.textContent = ch.description || '';
         }
 
-        // 3. Получаем информацию о стриме (зрители, статус)
+        // 3. Информация о стриме
         const streamRes = await fetch(
           `https://api.twitch.tv/helix/streams?user_id=${user.id}`,
           {
@@ -807,96 +691,6 @@
         descEl.textContent = 'Не удалось загрузить описание.';
       }
     }
-
-    // ================================================================
-    // ПОИСК КАНАЛОВ
-    // ================================================================
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
-    let searchTimeout = null;
-
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      const query = searchInput.value.trim();
-
-      if (query.length < 2) {
-        searchResults.classList.remove('visible');
-        searchResults.innerHTML = '';
-        return;
-      }
-
-      searchTimeout = setTimeout(() => searchChannels(query), 350);
-    });
-
-    async function searchChannels(query) {
-      try {
-        const token = await getAppAccessToken();
-
-        const url = `https://api.twitch.tv/helix/search/channels` +
-          `?query=${encodeURIComponent(query)}&first=10`;
-
-        const res = await fetch(url, {
-          headers: {
-            'Client-ID': CLIENT_ID,
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        const data = await res.json();
-        renderSearchResults(data.data || []);
-      } catch (err) {
-        console.error('Ошибка поиска:', err);
-      }
-    }
-
-    function renderSearchResults(channels) {
-      if (channels.length === 0) {
-        searchResults.innerHTML =
-          '<div class="search-item"><div class="search-item-name">' +
-          'Ничего не найдено</div></div>';
-        searchResults.classList.add('visible');
-        return;
-      }
-
-      searchResults.innerHTML = channels.map(ch => {
-        const liveBadge = ch.is_live
-          ? '<span class="live-badge">LIVE</span>'
-          : '';
-        const game = ch.game_name || 'Без категории';
-        const avatar = ch.thumbnail_url || '';
-
-        return `
-          <div class="search-item" data-channel="${ch.broadcaster_login}">
-            <img src="${avatar}" alt="${ch.display_name}" />
-            <div class="search-item-info">
-              <div class="search-item-name">
-                ${ch.display_name}${liveBadge}
-              </div>
-              <div class="search-item-game">${game}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      searchResults.classList.add('visible');
-
-      searchResults.querySelectorAll('.search-item').forEach(el => {
-        el.addEventListener('click', () => {
-          const channel = el.dataset.channel;
-          if (channel) {
-            switchChannel(channel);
-            searchInput.value = '';
-            searchResults.classList.remove('visible');
-          }
-        });
-      });
-    }
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.search-wrapper')) {
-        searchResults.classList.remove('visible');
-      }
-    });
 
     // ================================================================
     // ПЕРЕКЛЮЧЕНИЕ КАНАЛА
