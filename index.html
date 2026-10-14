@@ -7,10 +7,10 @@
   <style>
     /* ===== Цветовая палитра в стиле Twitch ===== */
     :root {
-      --bg-main: #0e0e10;      /* основной фон */
-      --bg-panel: #18181b;     /* панели */
-      --bg-input: #1f1f23;     /* поля ввода */
-      --accent: #9147ff;       /* фирменный фиолетовый */
+      --bg-main: #0e0e10;
+      --bg-panel: #18181b;
+      --bg-input: #1f1f23;
+      --accent: #9147ff;
       --accent-hover: #772ce8;
       --text-main: #efeff1;
       --text-muted: #adadb8;
@@ -181,6 +181,17 @@
       background: var(--accent-hover);
     }
 
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-input);
+      border-color: var(--accent);
+    }
+
     /* ===== Основная область ===== */
     main {
       padding: 24px;
@@ -207,6 +218,12 @@
       color: var(--text-muted);
     }
 
+    .player-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
     .embed-container {
       width: 100%;
       background: #000;
@@ -214,6 +231,7 @@
       overflow: hidden;
       border: 1px solid var(--border);
       min-height: 480px;
+      transition: all 0.25s ease;
     }
 
     #twitch-embed {
@@ -221,7 +239,47 @@
       height: 100%;
     }
 
-    /* ===== Подсказка, если чат не виден ===== */
+    /* ===== Режим развёрнутой панели ===== */
+    .embed-container.expanded {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      border-radius: 0;
+      border: none;
+      min-height: 100vh;
+      height: 100vh;
+      background: #000;
+    }
+
+    /* Кнопка выхода из полноэкранного режима */
+    .exit-fullscreen-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10000;
+      padding: 10px 16px;
+      background: rgba(24, 24, 27, 0.9);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+      backdrop-filter: blur(6px);
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .exit-fullscreen-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .exit-fullscreen-btn.visible {
+      display: block;
+    }
+
+    /* ===== Подсказка ===== */
     .hint {
       margin-top: 16px;
       padding: 12px 16px;
@@ -264,7 +322,6 @@
   <header>
     <div class="logo">Twitch Viewer</div>
 
-    <!-- Поиск каналов -->
     <div class="search-wrapper">
       <input
         type="text"
@@ -276,7 +333,6 @@
       <div id="searchResults" class="search-results"></div>
     </div>
 
-    <!-- Ручной ввод канала -->
     <div class="channel-input-row">
       <input
         type="text"
@@ -297,10 +353,15 @@
           Введите имя канала или воспользуйтесь поиском
         </div>
       </div>
+
+      <!-- Кнопки управления плеером -->
+      <div class="player-actions">
+        <button id="toggleSizeBtn" class="btn btn-ghost">Развернуть</button>
+      </div>
     </div>
 
     <!-- Сюда встраивается плеер Twitch -->
-    <div class="embed-container">
+    <div class="embed-container" id="embedContainer">
       <div id="twitch-embed"></div>
     </div>
 
@@ -311,6 +372,11 @@
     </div>
   </main>
 
+  <!-- Кнопка выхода из полноэкранного режима -->
+  <button id="exitFullscreenBtn" class="exit-fullscreen-btn">
+    ✕ Выйти из полноэкранного режима
+  </button>
+
   <!-- ===== Подключаем официальный Twitch Embed SDK ===== -->
   <script src="https://embed.twitch.tv/embed/v1.js"></script>
 
@@ -318,29 +384,15 @@
     // ================================================================
     // НАСТРОЙКИ
     // ================================================================
-    //
-    // 1. Зарегистрируйте приложение на https://dev.twitch.tv/console/apps
-    // 2. Получите CLIENT_ID
-    // 3. Для поиска каналов нужен App Access Token (см. ниже функцию
-    //    getAppAccessToken — она использует CLIENT_SECRET).
-    //
-    // ВНИМАНИЕ: CLIENT_SECRET нельзя держать на фронтенде в продакшене!
-    // Для реального проекта вынесите получение токена на бэкенд.
-    // Для локального теста можно указать временно.
-    // ================================================================
-
     const CLIENT_ID = 'ВАШ_CLIENT_ID';
     const CLIENT_SECRET = 'ВАШ_CLIENT_SECRET';
 
-    // Имя канала по умолчанию
     let currentChannel = 'twitch';
-
-    // Переменные для Embed и токена
     let twitchEmbed = null;
     let appAccessToken = null;
 
     // ================================================================
-    // ПОЛУЧЕНИЕ APP ACCESS TOKEN (для поиска каналов)
+    // ПОЛУЧЕНИЕ APP ACCESS TOKEN
     // ================================================================
     async function getAppAccessToken() {
       if (appAccessToken) return appAccessToken;
@@ -357,31 +409,32 @@
     }
 
     // ================================================================
-    // ИНИЦИАЛИЗАЦИЯ EMBED С ПЛЕЕРОМ И ЧАТОМ
+    // ИНИЦИАЛИЗАЦИЯ EMBED
     // ================================================================
     function initEmbed(channel) {
-      // Если Embed уже создан — удаляем старый iframe
       const container = document.getElementById('twitch-embed');
       container.innerHTML = '';
 
-      // Twitch.Embed создаёт iframe с плеером и чатом
+      // Определяем высоту в зависимости от режима
+      const isExpanded = document
+        .getElementById('embedContainer')
+        .classList.contains('expanded');
+
       twitchEmbed = new Twitch.Embed('twitch-embed', {
         width: '100%',
-        height: 480,
+        height: isExpanded ? '100%' : 480,
         channel: channel,
-        layout: 'video-with-chat',   // плеер + чат
-        parent: [window.location.hostname], // ВАЖНО: ваш домен
+        layout: 'video-with-chat',
+        parent: [window.location.hostname],
         theme: 'dark',
         autoplay: true,
         muted: false
       });
 
-      // Обновляем заголовок
       document.getElementById('playerTitle').textContent = channel;
       document.getElementById('playerStatus').textContent =
         'Стрим загружается...';
 
-      // Слушаем события плеера
       twitchEmbed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
         document.getElementById('playerStatus').textContent =
           'Плеер готов. Войдите в чат, чтобы писать сообщения.';
@@ -394,7 +447,48 @@
     }
 
     // ================================================================
-    // ПОИСК КАНАЛОВ ЧЕРЕЗ HELIX API
+    // РАЗВОРАЧИВАНИЕ / СВОРАЧИВАНИЕ ПАНЕЛИ
+    // ================================================================
+    const embedContainer = document.getElementById('embedContainer');
+    const toggleSizeBtn = document.getElementById('toggleSizeBtn');
+    const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
+
+    function toggleExpanded() {
+      const willExpand = !embedContainer.classList.contains('expanded');
+      setExpanded(willExpand);
+    }
+
+    function setExpanded(expand) {
+      if (expand) {
+        embedContainer.classList.add('expanded');
+        document.body.style.overflow = 'hidden';
+        toggleSizeBtn.textContent = 'Свернуть';
+        exitFullscreenBtn.classList.add('visible');
+      } else {
+        embedContainer.classList.remove('expanded');
+        document.body.style.overflow = '';
+        toggleSizeBtn.textContent = 'Развернуть';
+        exitFullscreenBtn.classList.remove('visible');
+      }
+
+      // Пересоздаём плеер, чтобы он занял корректную высоту
+      if (twitchEmbed) {
+        initEmbed(currentChannel);
+      }
+    }
+
+    toggleSizeBtn.addEventListener('click', toggleExpanded);
+    exitFullscreenBtn.addEventListener('click', () => setExpanded(false));
+
+    // Выход по Esc
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && embedContainer.classList.contains('expanded')) {
+        setExpanded(false);
+      }
+    });
+
+    // ================================================================
+    // ПОИСК КАНАЛОВ
     // ================================================================
     const searchInput = document.getElementById('searchInput');
     const searchResults = document.getElementById('searchResults');
@@ -410,7 +504,6 @@
         return;
       }
 
-      // Задержка, чтобы не спамить API
       searchTimeout = setTimeout(() => searchChannels(query), 350);
     });
 
@@ -466,7 +559,6 @@
 
       searchResults.classList.add('visible');
 
-      // Клик по результату — переключить канал
       searchResults.querySelectorAll('.search-item').forEach(el => {
         el.addEventListener('click', () => {
           const channel = el.dataset.channel;
@@ -479,7 +571,6 @@
       });
     }
 
-    // Скрываем результаты при клике вне поиска
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.search-wrapper')) {
         searchResults.classList.remove('visible');
@@ -494,7 +585,6 @@
       initEmbed(channel);
     }
 
-    // Ручной ввод канала
     const channelInput = document.getElementById('channelInput');
     const loadBtn = document.getElementById('loadBtn');
 
@@ -511,7 +601,7 @@
     });
 
     // ================================================================
-    // СТАРТ: загружаем канал по умолчанию
+    // СТАРТ
     // ================================================================
     initEmbed(currentChannel);
   </script>
