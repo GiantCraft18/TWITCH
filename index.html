@@ -25,7 +25,6 @@
       --radius-sm: 6px;
       --radius-md: 10px;
       --radius-lg: 14px;
-      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
       --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.65);
       --transition: 0.18s ease;
       --header-h: 64px;
@@ -92,13 +91,7 @@
       -webkit-text-fill-color: transparent;
     }
 
-    /* Поиск */
-    .search-wrapper {
-      position: relative;
-      flex: 1;
-      max-width: 480px;
-    }
-
+    .search-wrapper { position: relative; flex: 1; max-width: 480px; }
     .search-box { position: relative; display: flex; align-items: center; }
 
     .search-icon {
@@ -163,6 +156,7 @@
       object-fit: cover;
       flex-shrink: 0;
       border: 2px solid var(--border);
+      background: var(--bg-elevated);
     }
 
     .search-item-avatar.live { border-color: var(--live); }
@@ -211,6 +205,27 @@
       50% { opacity: 0.3; }
     }
 
+    .search-empty, .search-error {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .search-error { color: #ff6b6b; }
+    .search-error code {
+      display: block;
+      margin-top: 8px;
+      padding: 8px;
+      background: var(--bg-main);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: left;
+      word-break: break-all;
+    }
+
     /* Кнопка входа */
     .auth-section {
       display: flex;
@@ -235,12 +250,7 @@
 
     .auth-btn:hover { background: var(--accent-hover); }
 
-    .user-info {
-      display: none;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .user-info { display: none; align-items: center; gap: 10px; }
     .user-info.visible { display: flex; }
 
     .user-avatar {
@@ -249,10 +259,7 @@
       border: 2px solid var(--accent);
     }
 
-    .user-name {
-      font-size: 13px;
-      font-weight: 600;
-    }
+    .user-name { font-size: 13px; font-weight: 600; }
 
     .logout-btn {
       font-size: 12px;
@@ -323,7 +330,6 @@
       margin-top: 2px;
     }
 
-    /* Контейнер с плеером и чатом */
     .content-area {
       flex: 1;
       display: flex;
@@ -338,9 +344,37 @@
       overflow: hidden;
       border: 1px solid var(--border-soft);
       min-height: 0;
+      position: relative;
     }
 
     #twitch-embed { width: 100%; height: 100%; }
+
+    .player-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: var(--bg-main);
+      z-index: 10;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Свой чат */
     .chat-container {
@@ -395,7 +429,6 @@
 
     .chat-message-author {
       font-weight: 700;
-      color: var(--accent);
       margin-right: 6px;
     }
 
@@ -423,10 +456,7 @@
       background: var(--bg-main);
     }
 
-    .chat-input:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    .chat-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .chat-login-prompt {
       padding: 20px;
@@ -462,7 +492,6 @@
 </head>
 <body>
 
-  <!-- ===== ШАПКА ===== -->
   <header class="header">
     <div class="logo">
       <div class="logo-icon">🎮</div>
@@ -482,7 +511,6 @@
       <div id="searchResults" class="search-results"></div>
     </div>
 
-    <!-- Кнопка входа через Twitch -->
     <div class="auth-section">
       <button class="auth-btn" id="loginBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -498,7 +526,6 @@
     </div>
   </header>
 
-  <!-- ===== ОСНОВНАЯ ОБЛАСТЬ ===== -->
   <main class="main">
     <div class="player-header">
       <div class="player-info">
@@ -512,10 +539,13 @@
 
     <div class="content-area">
       <div class="player-container">
+        <div class="player-overlay" id="playerOverlay">
+          <div class="spinner"></div>
+          <div>Загрузка плеера...</div>
+        </div>
         <div id="twitch-embed"></div>
       </div>
 
-      <!-- Свой чат -->
       <div class="chat-container">
         <div class="chat-header">
           <span>Чат</span>
@@ -539,10 +569,19 @@
     // ================================================================
     // НАСТРОЙКИ
     // ================================================================
+    // ВАЖНО: CLIENT_SECRET нельзя держать на фронтенде в продакшене.
+    // Здесь он оставлен ТОЛЬКО для локального теста OAuth-входа.
+    // Для поиска используется публичный прокси (см. getAppAccessToken).
+    // ================================================================
+
     const CLIENT_ID = 'ВАШ_CLIENT_ID';
     const CLIENT_SECRET = 'ВАШ_CLIENT_SECRET';
     const REDIRECT_URI = window.location.origin + window.location.pathname;
     const SCOPES = 'chat:read chat:edit user:read:email';
+
+    // Публичный прокси для обхода CORS при получении токена.
+    // В продакшене замените на свой бэкенд.
+    const CORS_PROXY = 'https://corsproxy.io/?';
 
     // ================================================================
     // СОСТОЯНИЕ
@@ -567,6 +606,7 @@
       playerTitle: document.getElementById('playerTitle'),
       playerSubtitle: document.getElementById('playerSubtitle'),
       playerAvatar: document.getElementById('playerAvatar'),
+      playerOverlay: document.getElementById('playerOverlay'),
       embedContainer: document.getElementById('twitch-embed'),
       loginBtn: document.getElementById('loginBtn'),
       userInfo: document.getElementById('userInfo'),
@@ -580,7 +620,27 @@
     };
 
     // ================================================================
-    // PKCE (для OAuth без бэкенда)
+    // УТИЛИТЫ
+    // ================================================================
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatViewers(n) {
+      if (!n && n !== 0) return '';
+      if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K';
+      return String(n);
+    }
+
+    // ================================================================
+    // PKCE
     // ================================================================
     function generateRandomString(length) {
       const array = new Uint8Array(length);
@@ -595,6 +655,174 @@
       const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)));
       return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     }
+
+    // ================================================================
+    // APP ACCESS TOKEN (для поиска и данных о каналах)
+    // ================================================================
+    async function getAppAccessToken() {
+      if (state.appAccessToken) return state.appAccessToken;
+
+      // Twitch OAuth endpoint НЕ поддерживает CORS для браузера,
+      // поэтому используем публичный прокси.
+      const targetUrl = `https://id.twitch.tv/oauth2/token` +
+        `?client_id=${CLIENT_ID}` +
+        `&client_secret=${CLIENT_SECRET}` +
+        `&grant_type=client_credentials`;
+
+      const proxyUrl = CORS_PROXY + encodeURIComponent(targetUrl);
+
+      try {
+        const res = await fetch(proxyUrl, { method: 'POST' });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`HTTP ${res.status}: ${text}`);
+        }
+        const data = await res.json();
+        if (!data.access_token) {
+          throw new Error('Токен не получен: ' + JSON.stringify(data));
+        }
+        state.appAccessToken = data.access_token;
+        console.log('✅ App Access Token получен');
+        return state.appAccessToken;
+      } catch (err) {
+        console.error('❌ Ошибка получения токена:', err);
+        throw err;
+      }
+    }
+
+    // ================================================================
+    // HELIX API
+    // ================================================================
+    async function helixGet(path) {
+      const token = await getAppAccessToken();
+      const url = `https://api.twitch.tv/helix${path}`;
+
+      const res = await fetch(url, {
+        headers: {
+          'Client-ID': CLIENT_ID,
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Helix ${res.status}: ${text}`);
+      }
+      return res.json();
+    }
+
+    // ================================================================
+    // ПОИСК КАНАЛОВ
+    // ================================================================
+    async function searchChannels(query) {
+      try {
+        console.log('🔍 Поиск:', query);
+        const data = await helixGet(
+          `/search/channels?query=${encodeURIComponent(query)}&first=10`
+        );
+        console.log('📦 Результат поиска:', data);
+
+        // ИСПРАВЛЕНИЕ БАГА TWITCH:
+        // broadcaster_login иногда возвращается как true вместо строки.
+        // В таком случае используем display_name в нижнем регистре.
+        return (data.data || []).map(ch => ({
+          ...ch,
+          // Нормализуем login для дальнейшего использования
+          safe_login: (
+            typeof ch.broadcaster_login === 'string' && ch.broadcaster_login
+              ? ch.broadcaster_login
+              : String(ch.display_name || '').toLowerCase()
+          )
+        }));
+      } catch (err) {
+        console.error('❌ Ошибка поиска:', err);
+        throw err;
+      }
+    }
+
+    function renderSearchResults(channels, error = null) {
+      if (error) {
+        els.searchResults.innerHTML = `
+          <div class="search-error">
+            Не удалось выполнить поиск
+            <code>${escapeHtml(error.message || String(error))}</code>
+          </div>
+        `;
+        els.searchResults.classList.add('visible');
+        return;
+      }
+
+      if (channels.length === 0) {
+        els.searchResults.innerHTML =
+          '<div class="search-empty">Ничего не найдено</div>';
+        els.searchResults.classList.add('visible');
+        return;
+      }
+
+      els.searchResults.innerHTML = channels.map(ch => {
+        const avatar = ch.thumbnail_url || '';
+        const live = ch.is_live;
+        const login = ch.safe_login;
+        return `
+          <div class="search-item" data-channel="${escapeHtml(login)}">
+            <img class="search-item-avatar ${live ? 'live' : ''}"
+                 src="${escapeHtml(avatar)}"
+                 alt=""
+                 onerror="this.style.visibility='hidden'" />
+            <div class="search-item-info">
+              <div class="search-item-name">
+                ${escapeHtml(ch.display_name)}
+                ${live ? '<span class="live-badge">LIVE</span>' : ''}
+              </div>
+              <div class="search-item-game">
+                ${escapeHtml(ch.game_name || 'Без категории')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      els.searchResults.classList.add('visible');
+
+      els.searchResults.querySelectorAll('.search-item').forEach(el => {
+        el.addEventListener('click', () => {
+          switchChannel(el.dataset.channel);
+          els.searchInput.value = '';
+          els.searchResults.classList.remove('visible');
+        });
+      });
+    }
+
+    let searchTimeout;
+    els.searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      const query = els.searchInput.value.trim();
+
+      if (query.length < 2) {
+        els.searchResults.classList.remove('visible');
+        els.searchResults.innerHTML = '';
+        return;
+      }
+
+      els.searchResults.innerHTML =
+        '<div class="search-empty"><div class="spinner" style="margin:0 auto 8px;"></div>Поиск...</div>';
+      els.searchResults.classList.add('visible');
+
+      searchTimeout = setTimeout(async () => {
+        try {
+          const channels = await searchChannels(query);
+          renderSearchResults(channels);
+        } catch (err) {
+          renderSearchResults([], err);
+        }
+      }, 350);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-wrapper')) {
+        els.searchResults.classList.remove('visible');
+      }
+    });
 
     // ================================================================
     // OAUTH — ВХОД ЧЕРЕЗ TWITCH
@@ -617,7 +845,8 @@
         code_challenge_method: 'S256'
       });
 
-      window.location.href = `https://id.twitch.tv/oauth2/authorize?${params}`;
+      window.location.href =
+        `https://id.twitch.tv/oauth2/authorize?${params}`;
     }
 
     async function handleOAuthCallback() {
@@ -633,17 +862,23 @@
       sessionStorage.removeItem('pkce_verifier');
 
       try {
-        const res = await fetch('https://id.twitch.tv/oauth2/token', {
+        // OAuth endpoint не поддерживает CORS — используем прокси
+        const targetUrl = `https://id.twitch.tv/oauth2/token`;
+        const body = new URLSearchParams({
+          client_id: CLIENT_ID,
+          client_secret: CLIENT_SECRET,
+          code: code,
+          grant_type: 'authorization_code',
+          redirect_uri: REDIRECT_URI,
+          code_verifier: verifier
+        });
+
+        const proxyUrl = CORS_PROXY + encodeURIComponent(targetUrl);
+
+        const res = await fetch(proxyUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
-            code: code,
-            grant_type: 'authorization_code',
-            redirect_uri: REDIRECT_URI,
-            code_verifier: verifier
-          })
+          body: body.toString()
         });
 
         const data = await res.json();
@@ -656,6 +891,7 @@
           window.history.replaceState({}, '', window.location.pathname);
           return true;
         }
+        console.error('OAuth ответ без токена:', data);
       } catch (err) {
         console.error('Ошибка OAuth:', err);
       }
@@ -682,6 +918,7 @@
           els.chatInput.style.display = 'block';
           els.chatInput.disabled = false;
           els.chatLoginPrompt.style.display = 'none';
+          connectToChat(state.currentChannel);
         }
       } catch (err) {
         console.error('Ошибка загрузки пользователя:', err);
@@ -710,27 +947,12 @@
     }
 
     // ================================================================
-    // APP ACCESS TOKEN (для поиска)
-    // ================================================================
-    async function getAppAccessToken() {
-      if (state.appAccessToken) return state.appAccessToken;
-
-      const url = `https://id.twitch.tv/oauth2/token?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&grant_type=client_credentials`;
-      const res = await fetch(url, { method: 'POST' });
-      const data = await res.json();
-      state.appAccessToken = data.access_token;
-      return state.appAccessToken;
-    }
-
-    // ================================================================
-    // TWITCH IRC CHAT
+    // TWITCH IRC
     // ================================================================
     function connectToChat(channel) {
       if (!state.userAccessToken || !state.userData) return;
 
-      if (state.ircSocket) {
-        state.ircSocket.close();
-      }
+      if (state.ircSocket) state.ircSocket.close();
 
       const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
       state.ircSocket = socket;
@@ -747,22 +969,25 @@
       };
 
       socket.onmessage = (event) => {
-        const lines = event.data.split('\r\n');
-        lines.forEach(line => {
+        event.data.split('\r\n').forEach(line => {
           if (!line) return;
-
           if (line.startsWith('PING')) {
             socket.send('PONG :tmi.twitch.tv');
             return;
           }
-
           if (line.includes('PRIVMSG')) {
-            const match = line.match(/:(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG #\w+ :(.+)/);
+            const match = line.match(
+              /:(\w+)!\w+@\w+\.tmi\.twitch\.tv PRIVMSG #\w+ :(.+)/
+            );
             if (match) {
               const username = match[1];
               const message = match[2];
               const isOwn = username === state.userData.login.toLowerCase();
-              addChatMessage(username, message, isOwn ? '#9147ff' : '#adadb8');
+              addChatMessage(
+                username,
+                message,
+                isOwn ? '#9147ff' : '#adadb8'
+              );
             }
           }
         });
@@ -773,16 +998,11 @@
         els.chatStatus.textContent = 'Отключен';
         els.chatStatus.classList.remove('connected');
       };
-
-      socket.onerror = (err) => {
-        console.error('Ошибка IRC:', err);
-      };
     }
 
     function sendChatMessage(message) {
       if (!state.ircSocket || !state.ircConnected) return;
       if (!message.trim()) return;
-
       state.ircSocket.send(`PRIVMSG #${state.currentChannel} :${message}`);
       els.chatInput.value = '';
     }
@@ -790,31 +1010,43 @@
     function addChatMessage(author, text, color) {
       const div = document.createElement('div');
       div.className = 'chat-message';
-      div.innerHTML = `<span class="chat-message-author" style="color:${color}">${escapeHtml(author)}</span><span class="chat-message-text">${escapeHtml(text)}</span>`;
+      div.innerHTML =
+        `<span class="chat-message-author" style="color:${color}">${escapeHtml(author)}</span>` +
+        `<span class="chat-message-text">${escapeHtml(text)}</span>`;
       els.chatMessages.appendChild(div);
       els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
     }
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // ================================================================
+    // ПЛЕЕР
+    // ================================================================
+    function getParentDomains() {
+      const hostname = window.location.hostname;
+      const parents = [hostname];
+      // Для локальной разработки добавляем оба варианта
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        parents.push('localhost', '127.0.0.1');
+      }
+      return parents;
     }
 
-    // ================================================================
-    // ПЛЕЕР (ТОЛЬКО ВИДЕО, БЕЗ ВСТРОЕННОГО ЧАТА)
-    // ================================================================
     function initPlayer(channel) {
       els.embedContainer.innerHTML = '';
+      els.playerOverlay.style.display = 'flex';
 
       state.embed = new Twitch.Embed('twitch-embed', {
         width: '100%',
         height: '100%',
         channel: channel,
-        layout: 'video',  // ТОЛЬКО видео, без чата
-        parent: [window.location.hostname],
+        layout: 'video',
+        parent: getParentDomains(),
         theme: 'dark',
         autoplay: true,
         muted: false
+      });
+
+      state.embed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
+        els.playerOverlay.style.display = 'none';
       });
     }
 
@@ -822,102 +1054,49 @@
     // ПЕРЕКЛЮЧЕНИЕ КАНАЛА
     // ================================================================
     async function switchChannel(channel) {
-      channel = channel.toLowerCase().trim();
-      if (!channel) return;
+      channel = String(channel).toLowerCase().trim();
+      if (!channel || channel === 'true' || channel === 'undefined') {
+        console.warn('Некорректное имя канала:', channel);
+        return;
+      }
 
       state.currentChannel = channel;
       els.playerTitle.textContent = channel;
       els.playerSubtitle.textContent = 'Загрузка...';
+      els.chatMessages.innerHTML = '';
 
       initPlayer(channel);
-      els.chatMessages.innerHTML = '';
       connectToChat(channel);
 
-      // Загружаем данные
       try {
-        const token = await getAppAccessToken();
-        const res = await fetch(`https://api.twitch.tv/helix/users?login=${channel}`, {
-          headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.data && data.data[0]) {
-          const user = data.data[0];
+        const [userData, streamData] = await Promise.all([
+          helixGet(`/users?login=${channel}`),
+          helixGet(`/streams?user_login=${channel}`)
+        ]);
+
+        const user = userData.data && userData.data[0];
+        const stream = streamData.data && streamData.data[0];
+
+        if (user) {
           els.playerAvatar.src = user.profile_image_url;
           els.playerTitle.textContent = user.display_name;
         }
 
-        const streamRes = await fetch(`https://api.twitch.tv/helix/streams?user_login=${channel}`, {
-          headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${token}` }
-        });
-        const streamData = await streamRes.json();
-        if (streamData.data && streamData.data[0]) {
-          const s = streamData.data[0];
-          els.playerSubtitle.innerHTML = `<span class="live-badge">LIVE</span> ${s.game_name || 'Без категории'} · ${s.viewer_count} зрителей`;
+        if (stream) {
           els.playerAvatar.classList.add('live');
+          els.playerSubtitle.innerHTML =
+            `<span class="live-badge">LIVE</span> ` +
+            `${escapeHtml(stream.game_name || 'Без категории')} · ` +
+            `${formatViewers(stream.viewer_count)} зрителей`;
         } else {
-          els.playerSubtitle.textContent = 'Не в эфире';
           els.playerAvatar.classList.remove('live');
+          els.playerSubtitle.textContent = 'Не в эфире';
         }
       } catch (err) {
         console.error(err);
+        els.playerSubtitle.textContent = 'Не удалось загрузить данные';
       }
     }
-
-    // ================================================================
-    // ПОИСК
-    // ================================================================
-    let searchTimeout;
-    els.searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      const query = els.searchInput.value.trim();
-      if (query.length < 2) {
-        els.searchResults.classList.remove('visible');
-        return;
-      }
-      searchTimeout = setTimeout(async () => {
-        try {
-          const token = await getAppAccessToken();
-          const res = await fetch(`https://api.twitch.tv/helix/search/channels?query=${encodeURIComponent(query)}&first=10`, {
-            headers: { 'Client-ID': CLIENT_ID, 'Authorization': `Bearer ${token}` }
-          });
-          const data = await res.json();
-          renderSearchResults(data.data || []);
-        } catch (err) { console.error(err); }
-      }, 350);
-    });
-
-    function renderSearchResults(channels) {
-      if (channels.length === 0) {
-        els.searchResults.innerHTML = '<div style="padding:20px;text-align:center;color:#adadb8">Ничего не найдено</div>';
-        els.searchResults.classList.add('visible');
-        return;
-      }
-
-      els.searchResults.innerHTML = channels.map(ch => `
-        <div class="search-item" data-channel="${ch.broadcaster_login}">
-          <img class="search-item-avatar ${ch.is_live ? 'live' : ''}" src="${ch.thumbnail_url}" alt="" onerror="this.style.visibility='hidden'" />
-          <div class="search-item-info">
-            <div class="search-item-name">${ch.display_name} ${ch.is_live ? '<span class="live-badge">LIVE</span>' : ''}</div>
-            <div class="search-item-game">${ch.game_name || 'Без категории'}</div>
-          </div>
-        </div>
-      `).join('');
-
-      els.searchResults.classList.add('visible');
-      els.searchResults.querySelectorAll('.search-item').forEach(el => {
-        el.addEventListener('click', () => {
-          switchChannel(el.dataset.channel);
-          els.searchInput.value = '';
-          els.searchResults.classList.remove('visible');
-        });
-      });
-    }
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.search-wrapper')) {
-        els.searchResults.classList.remove('visible');
-      }
-    });
 
     // ================================================================
     // СОБЫТИЯ
@@ -935,17 +1114,14 @@
     // ИНИЦИАЛИЗАЦИЯ
     // ================================================================
     async function init() {
-      // Проверяем callback от OAuth
-      const wasCallback = await handleOAuthCallback();
+      await handleOAuthCallback();
 
-      // Загружаем сохранённый токен
       const savedToken = localStorage.getItem('twitch_user_token');
       if (savedToken) {
         state.userAccessToken = savedToken;
         await loadUserData();
       }
 
-      // Загружаем канал по умолчанию
       switchChannel('twitch');
     }
 
